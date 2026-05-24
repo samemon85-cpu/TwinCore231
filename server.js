@@ -8,7 +8,7 @@ import { connectDB }           from "./config/database.js";
 import { connectRedis }        from "./config/redis.js";
 import logger                  from "./config/logger.js";
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 async function bootstrap() {
   // 1. Databases
