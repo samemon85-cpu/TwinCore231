@@ -1,7 +1,7 @@
 "use strict";
 import "dotenv/config";
 import http from "node:http";
-import app from "./twincore-v3.js";
+import app from "./twincore-v3.jsx";
 import { initWebSocketServer } from "./services/websocket.service.js";
 import { connectMQTT }         from "./services/mqtt.service.js";
 import { connectDB }           from "./config/database.js";
