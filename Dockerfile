@@ -1,6 +1,6 @@
 FROM node:20-alpine
 
-# Install Python (for your model_manager.py and test_predict.py)
+# Install Python (for your .py files)
 RUN apk add --no-cache \
     python3 \
     py3-pip \
@@ -11,11 +11,14 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 
-# Copy everything from your repo
+# Copy all files
 COPY . .
 
-# Expose the port Render expects
+# Install Node.js dependencies (dotenv + anything else you add later)
+RUN npm install --production
+
+# Expose port (Render uses PORT env variable)
 EXPOSE 3000
 
-# Start your Node.js server
-CMD ["node", "server.js"]
+# Start the server
+CMD ["npm", "start"]
