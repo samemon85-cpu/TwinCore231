@@ -1,44 +1,59 @@
 "use strict";
 import "dotenv/config";
-import http from "node:http";
-import app from "./twincore-v3.jsx";
-import { initWebSocketServer } from "./services/websocket.service.js";
-import { connectMQTT }         from "./services/mqtt.service.js";
-import { connectDB }           from "./config/database.js";
-import { connectRedis }        from "./config/redis.js";
-import logger                  from "./config/logger.js";
+import express from "express";
+import { exec } from "child_process";
+import { promisify } from "util";
 
+const execAsync = promisify(exec);
+
+const app = express();
 const PORT = process.env.PORT || 3000;
 
-async function bootstrap() {
-  // 1. Databases
-  await connectDB();
-  await connectRedis();
+// Middleware
+app.use(express.json());
 
-  // 2. HTTP server
-  const server = http.createServer(app);
-
-  // 3. WebSocket server (shares HTTP server port)
-  initWebSocketServer(server);
-
-  // 4. MQTT bridge
-  await connectMQTT();
-
-  server.listen(PORT, () => {
-    logger.info({ port: PORT, env: process.env.NODE_ENV }, "TwinCore API started");
+// Health check
+app.get("/", (req, res) => {
+  res.json({
+    message: "TwinCore API is running 🚀",
+    status: "ok",
+    timestamp: new Date().toISOString()
   });
+});
 
-  // Graceful shutdown
-  const shutdown = async (signal) => {
-    logger.info({ signal }, "Shutting down gracefully…");
-    server.close(() => process.exit(0));
-    setTimeout(() => process.exit(1), 10_000);
-  };
-  process.on("SIGTERM", () => shutdown("SIGTERM"));
-  process.on("SIGINT",  () => shutdown("SIGINT"));
-}
+app.get("/health", (req, res) => {
+  res.json({ status: "healthy" });
+});
 
-bootstrap().catch((err) => {
-  logger.error(err, "Fatal error during bootstrap");
-  process.exit(1);
+// Example route to test Python model
+app.get("/predict", async (req, res) => {
+  try {
+    const { stdout, stderr } = await execAsync("python3 test_predict.py");
+    if (stderr) console.error("Python stderr:", stderr);
+    
+    res.json({
+      success: true,
+      prediction: stdout.trim(),
+      message: "Python model executed successfully"
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// You can add more routes here later
+app.post("/api/twin", (req, res) => {
+  res.json({
+    message: "Digital Twin endpoint ready",
+    received: req.body
+  });
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(✅ TwinCore server started on port ${PORT});
+  console.log(🌍 Health check: http://localhost:${PORT}/);
 });
